@@ -7,29 +7,29 @@ this is an under developpement project that aim to produce openscad code from py
 there is no installation procedure yet.  but since it's pure python, you just have to submodule on the root of your project.
 if the project is a valid git repo : 
 
-'git submodule add git@github.com:quartane/python_to_openscad.git'
+```git submodule add git@github.com:quartane/python_to_openscad.git```
 
 then inside the code , you just have to 
 
-'''
+```
 from python_to_openscad.python_to_openscad import * 
 
 
-'''
+```
 
 
 # example
 
-'''
+```
 from python_to_openscad.python_to_openscad import * 
 
 # create a cube and a sphere and make a union of them
-A = cube([1*cm,3*cm,5*cm])+ sphere(r=1*dm).translateZ(1*dm)
+A = cube([1*cm,3*cm,5*cm])+ sphere(radius=1*dm).translateZ(1*dm)
 #rotate the whole structure
 A = A.rotateZ(76)
 #print into the console the openscad result
 print(A.render())
-'''
+```
 
 
 
