@@ -10,17 +10,30 @@ def getmm():
     return 100
     
     
-
-def render(obj, __tab_level=0):
+__tab_level = 0
+def render(obj):
+    global __tab_level
+     
     curTab = "\t"*__tab_level
     
-    toreturn = curTab+"%s(%s)"%(obj.render_name() , obj.render_args())    
+    try:
+
+        toreturn = curTab+"%s(%s)"%(str(obj.render_name()) , str(obj.render_args()))    
+    except Exception as e:
+        print("could not render %s"%(str(type(obj))))
+        raise e
     listChild = obj.get_childs_to_render()
     
     if listChild:
         toadd = curTab+"{\n"
         for b in listChild:
-            toadd+=render(b, __tab_level+1)
+            __tab_level+=1
+            try:
+                toadd+=b.render(  )
+            except Exception as e:
+                print("could not render %s"%(str(type(b))))
+                raise e
+            __tab_level-=1
         toadd += curTab+"}"
         toreturn+=toadd
     toreturn+=";\n"

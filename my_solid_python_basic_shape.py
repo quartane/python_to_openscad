@@ -25,10 +25,33 @@ def argto_string(arg):
     # ok don't know if it's a good idea ...
     # but here I'll transform every float into int 
     
-
+    if type(arg) is str:
+        return arg
     return str(int(arg))
     
 
+ 
+
+"""
+$fa
+    minimum angle
+$fs
+    minimum size
+$fn
+    number of fragments
+$t
+    animation step
+$vpr
+    viewport rotation angles in degrees
+$vpt
+    viewport translation
+$vpd
+    viewport camera distance
+$children
+     number of module children
+$preview
+     true in F5 preview, false for F6 
+"""
 # ------------------ basics units ----------------------
 class shape:
     __uid__=0
@@ -122,8 +145,65 @@ class shape:
             return None
         return self.child_list
 
+    def color(self, colorn, alpha=None):
+        return color(self, colorn=colorn,alpha=alpha)
+    
+    # def hole(self):
+        # return hole(self)
+    
+    # def part(self):
+        # return part(self)
 
 
+
+
+
+# class hole(shape):
+    # """
+        # special object that will not render himself, 
+        # but everything placed inside  will dig a hole 
+        # in the final parts 
+        # the hole is nulified with the part Object :)
+    # """
+    # def __init__(self):
+        # super().__init__()
+    
+    # def render(self, list_hole = None):
+        # if list_hole is None:
+            # raise SyntaxError("To use hole, parent must be a 'part'!")
+        # list_hole.append(self)
+        # return ""
+    
+    # def render_hole(): 
+        # will not work since we have to translate rotate, .... hole ... we can't just put the out this 
+        # toreturn = "" 
+        # for b in child_list:
+            # toreturn+=b.render()
+        # return toreturn
+        
+# class part(shape):
+    # def __init__(self):
+        # super().__init__()
+
+    # def render(self,list_hole=None):
+        # my_list_hole = []
+        # toreturn = "" 
+        # for b in child_list:
+            # toreturn+=b.render(list_hole = my_list_hole)
+        # return toreturn
+
+
+
+class advanced_shape(shape):
+    def __init__(self):
+        super().__init__()
+        self.child_list.append( self._draw_myself_())
+        
+    def _draw_myself_(self):
+        raise SyntaxError("advanced_shape object or child must define thier _draw_myself_ method")
+    
+    def render(self):
+        return render.render(self.child_list[0])
 
 
 #------------------------ basics shape --------------------------------------
@@ -178,16 +258,26 @@ class cylinder(shape):
 
     def __init__(self,h =None, height=None,  r=None, radius=None, d=None, diameter=None, center = False, r1=None, r2=None, d1=None, d2=None):
         super().__init__()
+     
         if (not h) and (not height):
             raise SyntaxError("cylinder must have a heigth ")
-        total = sum( [ 1 if b else 0 for b in [r, radius, d, diameter] ]  )
-        if(total!= 1):
-            raise SyntaxError("cylinder must have either radius or diameter set, and not both neither")
-
-        total = total+sum( [ 1 if b else 0 for b in [r1, r2, d1, d2] ]  )
-        if(total != 2):
-            raise SyntaxError("must specify radius 1, radius 2 or diams 1 and diams 2 ")
-
+            
+            
+        total_cylinder = sum( [ 1 if b else 0 for b in [r, radius, d, diameter] ]  )
+        
+        total_cone     = sum( [ 1 if b else 0 for b in [r1, r2, d1, d2] ]  )
+        
+        if not ( 
+            (total_cylinder == 0 and  total_cone == 2)or 
+            (total_cylinder == 1 and  total_cone == 0)) :
+             
+            raise SyntaxError("""
+          when using cylinder, one must define either 
+          [  radius |  diameter |  d1 and d2  | r1 and r2 ]
+          any other combinaison will be refused ...
+            """)
+        
+         
         self.height = h if h else height
         self.radius = None
         self.diameter = None
@@ -200,25 +290,25 @@ class cylinder(shape):
         if d:
             self.diameter = d
         self.center = center
-        if total   != 1 :
-            raise SyntaxError("cylinder: only one arg can be specified : radius, diameter=d")
-
+       
+    def render(self):
+        return super().render()
 
     def render_args(self):
         heigth_args = "h=%s, "%( argto_string( self.height ) )
         center = ", center=true" if  self.center else ""
         if self.radius :
-            return heigth_args + "radius=%s %s"%(argto_string(self.radius),center)
+            return heigth_args + "r=%s %s"%(argto_string(self.radius),center)
         if self.diameter:
-            return heigth_args + "diameter=%s %s"%(argto_string(self.diameter),center)
+            return heigth_args + "d=%s %s"%(argto_string(self.diameter),center)
         if self.r1:
             base_1 = "r1=%s, "%argto_string(self.r1)
         if self.r2:
-            base_2 = "r2=%s, "%argto_string(self.r2)
+            base_2 = "r2=%s "%argto_string(self.r2)
         if self.d1:
             base_1 = "d1=%s, "%argto_string(self.d1)
         if self.d2:
-            base_2 = "d2=%s, "%argto_string(self.d2)
+            base_2 = "d2=%s "%argto_string(self.d2)
         return  heigth_args + base_1 + base_2 + center
 
 
@@ -339,6 +429,7 @@ class polygon(shape):
         super().__init__()
         self.points = points
         self.path = path
+
     def render_args(self):
         return argto_string(self.points)
 
@@ -356,7 +447,8 @@ class text(shape):
         self.language = language
         self.scrip = scrip
 
-
+    def render_args(self):
+        return argto_string(self.points)
 
 
 class import_(shape):
@@ -375,9 +467,7 @@ class import_(shape):
 """
 mirror([x,y,z])
 multmatrix(m)
-color("colorname",alpha)
-color("#hexvalue")
-color([r,g,b,a])
+
 offset(r|delta,chamfer)
 hull()
 minkowski()
@@ -426,7 +516,24 @@ class resize(shape):
             return argto_string(self.direction)
         return argto_string(self.direction)+", "+argto_string(self.auto)
 
+class color(shape):
+    """
+    color("colorname",alpha)
+    color("#hexvalue")
+    color([r,g,b,a])
+    """
+    def __init__(self, child, colorn, alpha=None):
+        super().__init__()
+        self.child_list.append(child)
+        self.color = colorn
+        self.alpha = alpha
+       
+    def render_args(self):
+        if self.alpha:
+            return str(self.color)+", "+argto_string(self.alpha)
+        return str(self.color)
 
+    
 #------------------------ operator --------------------------------------
 class union(shape):
     def __init__(self, *args):
@@ -441,6 +548,8 @@ class union(shape):
         if not issubclass(type(B), shape):
             raise IOError("invalid object '%s' of type  %s"%(str(shape), str(type(shape))))
         self.child_list.append(B)
+        return self
+
     def render_args(self):
         return ""
 
@@ -458,6 +567,7 @@ class intersection(shape):
         if not issubclass(type(B), shape):
             raise IOError("invalid object '%s' of type  %s"%(str(shape), str(type(shape))))
         self.child_list.append(B)
+        return self
 
     def render_args(self):
         return ""
@@ -479,6 +589,8 @@ class difference(shape):
         if not issubclass(type(B), shape):
             raise IOError("invalid object '%s' of type  %s"%(str(shape), str(type(shape))))
         self.child_list.append(B)
+        return self
+        
     def render_args(self):
         return ""
 

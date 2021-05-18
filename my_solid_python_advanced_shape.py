@@ -1,6 +1,10 @@
 import numpy as np
-import my_solid_python_basic_shape as msp
 import math
+
+try :
+    from . import my_solid_python_basic_shape as msp
+except :
+    import my_solid_python_basic_shape as msp
 
 
 class regular_polygon(msp.polygon):
@@ -40,3 +44,7 @@ class pentagon(regular_polygon):
             radius = size/(2*math.sin(math.radians(36)))
         super().__init__(N=5,radius=radius, alignToX=alignToX)
 
+
+
+
+class junction(msp.polygon)
