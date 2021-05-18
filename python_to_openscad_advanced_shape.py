@@ -2,9 +2,9 @@ import numpy as np
 import math
 
 try :
-    from . import my_solid_python_basic_shape as msp
+    from . import python_to_openscad_basic_shape as msp
 except :
-    import my_solid_python_basic_shape as msp
+    import python_to_openscad_basic_shape as msp
 
 
 class regular_polygon(msp.polygon):
@@ -47,4 +47,4 @@ class pentagon(regular_polygon):
 
 
 
-class junction(msp.polygon)
+# class junction(msp.polygon)
