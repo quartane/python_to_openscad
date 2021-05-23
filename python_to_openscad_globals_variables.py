@@ -86,6 +86,24 @@ class global_variable:
 
         return self.this_variable_is_used_in_the_code
     
+    def getString(self):
+        """
+            return a string representation of this variable, 
+            relative to others globals variable.
+            for example if this is an basic_operation 10*cm 
+            will return "(10*cm)"
+            if this is just a variable, will return the variable name ...
+        """
+        returnToRender = global_variable.__render_mode
+        self.activate_render_mode(True)
+        toreturn = str(self)
+        self.activate_render_mode(returnToRender)
+        #ensure we don't think the variable is used if we call getString()
+        if type(self) is global_variable:
+            self.numberOfOccuranceInCode-=1 
+        return toreturn
+        
+        
     def getScalar(self):
         """
             return a scalar value for this variable
@@ -151,6 +169,7 @@ class global_variable:
     def __str__(self):
         self.numberOfOccuranceInCode+=1
         return str(self.name)
+
     def __add__(self, p2): # Addition
         return self.return_basic_operation(self,  p2, "+")
     def __radd__( p2,self):
