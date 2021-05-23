@@ -6,18 +6,17 @@
 """
 
 
+
 def getmm():
     return 100
     
 
 __tab_level = 0
-def render(obj):
+def render(obj, first_object = False):
     global __tab_level
-     
     curTab = "\t"*__tab_level
-    
-    try:
 
+    try:
         toreturn = curTab+"%s(%s)"%(str(obj.render_name()) , str(obj.render_args()))    
     except Exception as e:
         print("could not render %s"%(str(type(obj))))
@@ -29,7 +28,7 @@ def render(obj):
         for b in listChild:
             __tab_level+=1
             try:
-                toadd+=b.render(  )
+                toadd+=b.__render__(  )
             except Exception as e:
                 print("could not render %s"%(str(type(b))))
                 raise e
