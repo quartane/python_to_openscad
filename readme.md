@@ -23,8 +23,11 @@ from python_to_openscad.python_to_openscad import *
 ```
 from python_to_openscad.python_to_openscad import * 
 
+FA = global_variable("$fa", 0.5, "render more detailled circles", force_present=True)
+A = global_variable("A", 1*mm, "variable A description")
+
 # create a cube and a sphere and make a union of them
-A = cube([1*cm,3*cm,5*cm])+ sphere(radius=1*dm).translateZ(1*dm)
+A = cube([A, 2*A, 3*A])+ sphere(radius=1*dm).translateZ(1*dm)
 #rotate the whole structure
 A = A.rotateZ(76)
 #print into the console the openscad result
@@ -35,6 +38,5 @@ print(A.render())
 
 # TODO
  - implement the remaining of the openscad syntaxe
- - add _global_ variable :  variable that you can modify later inside 
  - support for holes and parts [if I have time]
  - doc 
