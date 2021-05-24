@@ -31,7 +31,7 @@ def argto_string(arg):
     
     
     if issubclass(type(arg),glbs.global_variable):
-        return str(arg)
+        return arg.getString()
         
         
     # ok don't know if it's a good idea ...
@@ -99,22 +99,22 @@ class shape:
     
 */
 """
-        
         allG = glbs.get_list_of_globals_variable()
         if len(allG) > 0:
-            toreturn+="// list of aall parameters for this scad!\n\n"
-            for b in allG:
+            toreturn+="// list of all parameters for this scad!\n\n"
+            for b in allG: 
                 b.check_used()
+                
             for b in allG:
-                toreturn+= b.render()
+                toreturn += b.render()
         return toreturn
             
     
     def render(self):
-        glbs.activate_render_mode(True)
+        # glbs.activate_render_mode(True)
         rendered_3D_obj =  self.__render__() #must be done first so global variable know if they are used
         header_generation = self.__init_render__()
-        glbs.activate_render_mode(False)
+        # glbs.activate_render_mode(False)
         return header_generation+"\n" +rendered_3D_obj
         
         

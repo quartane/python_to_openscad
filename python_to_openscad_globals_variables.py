@@ -1,8 +1,27 @@
 """
-    define a global variable that can be used for openscad
+    define globals variable that can be used for openscad
 
 """
 
+
+ENABLE_SYMPY = False
+try :
+    """
+        sympy is not mendatory, but generate mush more readable 
+        openscad code ...
+        the counterpart is that the generation is slower
+    """
+    import sympy 
+    ENABLE_SYMPY = True
+except Exception as e :
+    pass 
+    
+if not ENABLE_SYMPY:
+    print("/* warning : using sympi should help */")
+
+
+    
+    
 def get_list_of_globals_variable():
     """
         return all object of type global_variable  
@@ -13,11 +32,12 @@ def get_list_of_globals_variable():
     return global_variable.list_of_globals_defined[:]
 
 
-def activate_render_mode(  activated = False):
-        """
-            value returned wont be anymore scalar value but string if True
-        """
-        global_variable.__render_mode = activated
+# def activate_render_mode(  activated = False):
+        # """
+            # value returned wont be anymore scalar value but string if True
+        # """
+        # global_variable.__render_mode = activated
+        # pass
 
 
 
@@ -29,10 +49,11 @@ class global_variable:
     
     """
 
-
     list_of_globals_defined=[] # list all global variable that exist!
-    __render_mode = False #as long as false ==> returned value are scalar  for operation 
+    # __render_mode = False #as long as false ==> returned value are scalar  for operation 
     
+    __known_operation = dict()
+    __known_operation["."]=0
     
     
     def __init__(self, name, value, description=None, force_present = False, _do_not_add_ = False):
@@ -43,16 +64,15 @@ class global_variable:
         force_present: by default, if a variable is not used, she is not printed either  ... with this to True she will
         
         """
-        
-        self.activate_render_mode(True)
+        # self.activate_render_mode(True)
         if type(name) != str: 
             raise SyntaxError("global variable name must be string!")
         self.name = name
-        
         self.value = value
         self.description = description
         self.force_present = force_present
-
+        self.numberOfOccuranceInCode = 0
+ 
         if not _do_not_add_:
             for k in global_variable.list_of_globals_defined:
                 if(k.getName()  == self.getName()):
@@ -60,21 +80,21 @@ class global_variable:
             global_variable.list_of_globals_defined.append(self)
         
         self.this_variable_is_used_in_the_code  = False
-        self.numberOfOccuranceInCode = 0
-        self.activate_render_mode(False)
+        
+        # self.activate_render_mode(False)
 
-    def activate_render_mode(self, activated = False):
-        """
-            change the behavior of this object!  
-            if True : the object will return a tree of object contening operation to find the value 
-            if False : the object will return scalar value for operation! 
+    # def activate_render_mode(self, activated = False):
+        # """
+            # change the behavior of this object!  
+            # if True : the object will return a tree of object contening operation to find the value 
+            # if False : the object will return scalar value for operation! 
             
-            this allow to use the object in for loop or if else inside the code  while keeping 
-            the freedom to have a global variable in the gerated code ! 
-            still it's not recomended since some case can lead to unpredicted behavior...
-            but hey :), you have this possibility, up to you to try it.
-        """
-        global_variable.__render_mode = activated
+            # this allow to use the object in for loop or if else inside the code  while keeping 
+            # the freedom to have a global variable in the gerated code ! 
+            # still it's not recomended since some case can lead to unpredicted behavior...
+            # but hey :), you have this possibility, up to you to try it.
+        # """
+        # global_variable.__render_mode = activated
     
     
     def is_used_in_the_code(self):
@@ -83,7 +103,9 @@ class global_variable:
             // TODO ==> recursive check if called inside an object somwhere
             // curently we just check if str is called once
         """
-
+        if self.force_present :
+            return True
+            
         return self.this_variable_is_used_in_the_code
     
     def getString(self):
@@ -94,10 +116,10 @@ class global_variable:
             will return "(10*cm)"
             if this is just a variable, will return the variable name ...
         """
-        returnToRender = global_variable.__render_mode
-        self.activate_render_mode(True)
-        toreturn = str(self)
-        self.activate_render_mode(returnToRender)
+        # returnToRender = global_variable.__render_mode
+        # self.activate_render_mode(True)
+        toreturn = self.sympyThis(str(self))
+        # self.activate_render_mode(returnToRender)
         #ensure we don't think the variable is used if we call getString()
         if type(self) is global_variable:
             self.numberOfOccuranceInCode-=1 
@@ -125,7 +147,7 @@ class global_variable:
             return a variable then a description inside the header of the 
             .scad file ! 
         """
-        if not self.is_used_in_the_code() or self.force_present:
+        if not self.is_used_in_the_code()  :
             return ""
 
         toret = "%s = %s;"%(self.getName(),str(self.value))
@@ -139,9 +161,9 @@ class global_variable:
             if yes, pass all variable and itself as 'used' 
             it mean it will generated inside the header of the 
             .scad file
-        """
-        if self.numberOfOccuranceInCode > 0:
-            self.set_used()
+        """ 
+        if (self.numberOfOccuranceInCode > 0) or (self.force_present):
+            self.set_used() 
 
     def set_used(self):
         """
@@ -161,27 +183,26 @@ class global_variable:
             return an object of type basic_operation if activate_render_mode is set to True
             else will return a scalar value of this object.
         """
-        if global_variable.__render_mode:
-            return basic_operation(A,  B, operation)
-        else : 
-            return basic_operation(A,  B, operation).getScalar()
-        
+        # if global_variable.__render_mode:
+        return basic_operation(A,  B, operation)
+        # else : 
+            # return basic_operation(A,  B, operation).getScalar()
+
     def __str__(self):
         self.numberOfOccuranceInCode+=1
         return str(self.name)
-
     def __add__(self, p2): # Addition
         return self.return_basic_operation(self,  p2, "+")
     def __radd__( p2,self):
-        return self.return_basic_operation(self,  p2, "+")
+        return self.return_basic_operation(p2, self, "+")
     def __sub__(self, p2) :# Subtraction
         return self.return_basic_operation(self,  p2, "-")
     def __rsub__( p2, self) :# Subtraction
-        return self.return_basic_operation(self,  p2, "-")
+        return self.return_basic_operation(p2, self,  "-")
     def __mul__(self, p2) :# Multiplication
         return self.return_basic_operation(self,  p2, "*")
     def __rmul__( self, p2) :# Multiplication
-        return self.return_basic_operation(self,  p2, "*")
+        return self.return_basic_operation(  p2, self, "*")
     def __pow__(self, p2) :# Power
         raise NotImplementedError("power (^) is not yet impelmented for global variable ")
     def __rpow__( p2, self) :# Power
@@ -245,8 +266,15 @@ class global_variable:
     def __rge__( p2, self):# Greater than or equal to
         return self.return_basic_operation(self,  p2, ">=")
     def __neg__(self):
-        self.return_basic_operation(0, self, "-")
-        return self
+        return self.return_basic_operation(0, self, "-")
+        
+
+    def sympyThis(self, text):
+        global ENABLE_SYMPY
+        if ENABLE_SYMPY:
+            return str(sympy.sympify( text ))
+        return str(text)
+        
         
 class basic_operation(global_variable):
     accepted_operation = [
@@ -263,14 +291,14 @@ class basic_operation(global_variable):
             B: the second operand of the operation
             operation : the operation you want to perform!
         """
-        self.activate_render_mode(True)
-        self.A = A
-        self.B = B
+        # self.activate_render_mode(True)
+        self.ordered_childs = [A , B ]
+        
+ 
         self.operation = operation
         super().__init__("","", _do_not_add_=True)
-        self.activate_render_mode(False)
+        # self.activate_render_mode(False)
 
-    
     def getScalar(self):
         """
             return the value of the operation ...
@@ -278,22 +306,24 @@ class basic_operation(global_variable):
         if not self.operation in basic_operation.accepted_operation:
             raise SyntaxError("can't get scalar value for operation : %s! not in allowed operations"%str(self.operation))
         
-        A= str(self.A.getScalar()) if  issubclass(type(self.A),global_variable ) else str(self.A)
-        B= str(self.B.getScalar()) if  issubclass(type(self.B),global_variable ) else str(self.B)
-          
-        toreturn = eval("(%s%s%s)"%(A,self.operation, B))
+        to_add = [ (str(b.getScalar()) if  issubclass(type(b), global_variable) else str(b)) for b in self.ordered_childs]
+        
+        
+        toreturn = eval(self.operation.join(to_add))
         return toreturn
-        
-        
         
     def set_used(self):
         """
             tell to this variable and all his "parent" that they are used 
             and so you have to display it inside the "header" of the openscad output
         """
-        for k in [self.A, self.B, self.operation]:
+        for k in self.ordered_childs:
             if(issubclass(type(k),global_variable )):
                 k.set_used()
-        
+        k = self.operation
+        if(issubclass(type(k),global_variable )):
+            k.set_used()
+
     def __str__(self):
-        return "(%s%s%s)"%( str(self.A), self.operation, str(self.B))
+        return  "(%s)"%str(self.operation).join([str(b) for b in self.ordered_childs])
+        

@@ -7,14 +7,17 @@
 
 
 
+TABULATION_SYMBOL = "  "
+
 def getmm():
     return 100
     
 
 __tab_level = 0
 def render(obj, first_object = False):
+    global TABULATION_SYMBOL
     global __tab_level
-    curTab = "\t"*__tab_level
+    curTab = TABULATION_SYMBOL*__tab_level
 
     try:
         toreturn = curTab+"%s(%s)"%(str(obj.render_name()) , str(obj.render_args()))    
@@ -24,7 +27,7 @@ def render(obj, first_object = False):
     listChild = obj.get_childs_to_render()
     
     if listChild:
-        toadd = curTab+"{\n"
+        toadd = "\n%s{\n"%curTab
         for b in listChild:
             __tab_level+=1
             try:
