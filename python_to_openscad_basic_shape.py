@@ -45,11 +45,11 @@ def argto_string(arg):
  
 
 """
-$fa
+_fa
     minimum angle
-$fs
+_fs
     minimum size
-$fn
+_fn
     number of fragments
 $t
     animation step
@@ -68,12 +68,22 @@ $preview
 class shape:
     __uid__=0
     FIRST_OBJECT_TO_BE_RENDRE=True
-    def __init__(self):
+    def __init__(self, _fn = None, _fa = None, _fs = None):
         self.u_id = shape.__uid__
         shape.__uid__+=1
         self.child_list=[]
         self.name = None
-
+        
+        self._fn = _fn
+        self._fa = _fa
+        self._fs = _fs
+    
+    def _gen_special_args(self):
+        return "%s%s%s"%(
+            ", $fa=%s"%argto_string(self._fa) if self._fa else "", 
+            ", $fn=%s"%argto_string(self._fn) if self._fn else "", 
+            ", $fs=%s"%argto_string(self._fs) if self._fs else ""  ) 
+    
     def __add__(self, B):
         return union(self, B)
     def union(self, B):
@@ -197,13 +207,13 @@ class shape:
         return self.child_list[:]
 
 class shape_2D(shape):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, _fn = None, _fa = None, _fs = None):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
 
 
 class advanced_shape(shape):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, _fn = None, _fa = None, _fs = None):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
         self.child_list.append( self._draw_myself_())
         
     def _draw_myself_(self):
@@ -216,10 +226,10 @@ class advanced_shape(shape):
 #------------------------ basics shape --------------------------------------
 class sphere(shape):
     """
-    sphere(radius | d=diameter)
+    sphere(radius | d=diameter , _fa, _fn, _fs)
     """
-    def __init__(self, radius=None, d=None, diameter = None):
-        super().__init__()
+    def __init__(self, radius=None, d=None, diameter = None, _fn = None, _fa = None, _fs = None):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
         total = sum( [ 1 if b else 0 for b in [radius, d, diameter] ]  )
         if total != 1 :
             raise SyntaxError("sphere: only one arg can be specified : radius, diameter=d")
@@ -229,13 +239,16 @@ class sphere(shape):
             self.diameter = diameter
 
     def render_args(self):
+        specials_args = self._gen_special_args()
+    
+    
         if self.radius:
-            return "r=%s "%argto_string(self.radius)
+            return "r=%s "%argto_string(self.radius) +specials_args
         if self.diameter:
-            return "d=%s "%argto_string(self.diameter)
+            return "d=%s "%argto_string(self.diameter) +specials_args
         if self.d:
-            return "d=%s "%argto_string(self.d)
-        return argto_string(self.size)
+            return "d=%s "%argto_string(self.d) +specials_args
+        return argto_string(self.size)+specials_args
 
 
 class cube(shape):
@@ -263,8 +276,14 @@ class cylinder(shape):
     cylinder(h,r1|d1,r2|d2,center)
     """
 
-    def __init__(self,h =None, height=None,  r=None, radius=None, d=None, diameter=None, center = False, r1=None, r2=None, d1=None, d2=None):
-        super().__init__()
+    def __init__(self,  h =None, height=None,  
+                        r=None, radius=None, 
+                        d=None, diameter=None, 
+                        center = False, 
+                        r1=None, r2=None, d1=None, d2=None,
+                        _fn = None, _fa = None, _fs = None
+                        ):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
      
         if (not h) and (not height):
             raise SyntaxError("cylinder must have a heigth ")
@@ -300,12 +319,13 @@ class cylinder(shape):
 
 
     def render_args(self):
+        spec_args = self._gen_special_args()
         heigth_args = "h=%s, "%( argto_string( self.height ) )
         center = ", center=true" if  self.center else ""
         if self.radius :
-            return heigth_args + "r=%s %s"%(argto_string(self.radius),center)
+            return heigth_args + "r=%s %s"%(argto_string(self.radius),center) + spec_args
         if self.diameter:
-            return heigth_args + "d=%s %s"%(argto_string(self.diameter),center)
+            return heigth_args + "d=%s %s"%(argto_string(self.diameter),center) +spec_args
         if self.r1:
             base_1 = "r1=%s, "%argto_string(self.r1)
         if self.r2:
@@ -314,7 +334,7 @@ class cylinder(shape):
             base_1 = "d1=%s, "%argto_string(self.d1)
         if self.d2:
             base_2 = "d2=%s "%argto_string(self.d2)
-        return  heigth_args + base_1 + base_2 + center
+        return  heigth_args + base_1 + base_2 + center +spec_args
 
 
 
@@ -368,8 +388,8 @@ class linear_extrude(shape):
         
     
 class rotate_extrude(shape):
-    def __init__(self, shape_obj, points=None, faces=None, convexity=None):
-        super().__init__()
+    def __init__(self, shape_obj, points=None, faces=None, convexity=None, _fn = None, _fa = None, _fs = None):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
         if not issubclass(type(shape_obj), shape):
             raise SyntaxError("your trying to extrude somethings that is not a 2D shape!")
         self.child_list.append(shape_obj)
@@ -378,6 +398,7 @@ class rotate_extrude(shape):
         self.convexity  = convexity
         
     def render_args(self):
+        spec_args = self._gen_special_args()
         toret="height=%s"%argto_string(self.height)
  
         if self.points:
@@ -386,7 +407,7 @@ class rotate_extrude(shape):
            toret+= ", faces=%s"%argto_string(faces) 
         if self.convexity:
            toret+= ", convexity=%s"%argto_string(convexity) 
-        return toret
+        return toret + spec_args
 
 #------------------------ basic shape 2D -------------------------------4
 """
@@ -403,8 +424,8 @@ projection(cut)
 
 """
 class circle(shape_2D):
-    def __init__(self, r=None, radius=None, d=None, diameter = None):
-        super().__init__()
+    def __init__(self, r=None, radius=None, d=None, diameter = None, _fn =None, _fa = None, _fs = None):
+        super().__init__(_fn = _fn, _fa = _fa, _fs = _fs)
         total = sum( [ 1 if b else 0 for b in [r, radius, d, diameter] ]  )
         if total != 1 :
             raise SyntaxError("sphere: only one arg can be specified : radius, diameter=d")
@@ -416,9 +437,10 @@ class circle(shape_2D):
             self.diameter= diameter
 
     def render_args(self):
+        spec_args = self._gen_special_args()
         if self.diameter:
-            return "d=%s "%argto_string(self.diameter)
-        return "r=%s "%argto_string(self.radius)
+            return "d=%s "%argto_string(self.diameter) +spec_args
+        return "r=%s "%argto_string(self.radius) +spec_args
 
 
 class square(shape_2D):

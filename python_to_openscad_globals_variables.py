@@ -267,7 +267,6 @@ class global_variable:
         return self.return_basic_operation(self,  p2, ">=")
     def __neg__(self):
         return self.return_basic_operation(0, self, "-")
-        
 
     def sympyThis(self, text):
         global ENABLE_SYMPY
